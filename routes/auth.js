@@ -38,7 +38,6 @@ const getPreferences = (user) => ({
 router.post('/register', async (req, res) => {
   try {
     const { name, email, password } = req.body;
-
     if (!name || !email || !password) {
       return res.status(400).json({ message: 'Please provide name, email and password' });
     }

@@ -1,0 +1,8 @@
+node_modules/
+
+# .env holds real secrets (MONGO_URI, JWT_SECRET) — never commit it.
+.env
+.env.local
+.env.*.local
+
+# .env.production is safe to commit (no secrets) and deploys need it.
