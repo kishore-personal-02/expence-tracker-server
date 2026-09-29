@@ -5,7 +5,24 @@ const cors = require('cors');
 const dotenv = require('dotenv');
 const connectDB = require('./config/db');
 
+// Same rule as the client: load .env, then let .env.<mode> override it.
+// override:true is what makes the mode-specific file win.
 dotenv.config({ quiet: true });
+dotenv.config({
+  path: `.env.${process.env.NODE_ENV || 'development'}`,
+  quiet: true,
+  override: true,
+});
+
+// Fail fast with a clear message instead of an obscure jsonwebtoken error
+// the first time someone tries to log in.
+if (!process.env.JWT_SECRET) {
+  console.error(
+    'JWT_SECRET is not set. Put it in your .env file (local) or set it in the ' +
+      'host dashboard (production).'
+  );
+  process.exit(1);
+}
 
 const NODE_ENV = process.env.NODE_ENV || 'development';
 const PORT = process.env.PORT || 5000;
