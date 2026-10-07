@@ -73,6 +73,9 @@ const registerRoutes = () => {
   app.use(`${API_MOUNT}/auth`, require('./routes/auth'));
   app.use(`${API_MOUNT}/expenses`, require('./routes/expenses'));
   app.use(`${API_MOUNT}/import`, require('./routes/import'));
+  app.use(`${API_MOUNT}/scheduled-payments`, require('./routes/scheduledPayments'));
+  app.use(`${API_MOUNT}/auto-pays`, require('./routes/autoPays'));
+  app.use(`${API_MOUNT}/scheduler`, require('./routes/scheduler'));
 
   // Serve the built frontend (production). CLIENT_DIST defaults to client/dist.
   const clientExists = fs.existsSync(path.join(CLIENT_DIST, 'index.html'));
@@ -129,6 +132,13 @@ if (process.env.VERCEL) {
   // the database is connected and initialized.
   ensureReady()
     .then(() => {
+      // Background loop for due scheduled/auto payments. Required lazily so
+      // the mongoose models are only compiled after the DB is ready, and
+      // skipped on serverless where an external cron calls /scheduler/run.
+      if (process.env.SCHEDULER_ENABLED !== 'false') {
+        require('./scheduler').startScheduler();
+      }
+
       app.listen(PORT, () => {
         console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`);
         console.log(`API mounted at ${API_MOUNT}`);

@@ -3,6 +3,7 @@ const jwt = require('jsonwebtoken');
 const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Expense = require('../models/Expense');
+const ScheduledPayment = require('../models/ScheduledPayment');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -188,6 +189,9 @@ router.put('/profile', protect, async (req, res) => {
 router.delete('/account', protect, async (req, res) => {
   try {
     await Expense.deleteMany({ user: req.user._id });
+    // Scheduled/auto payments must go too, otherwise the background scheduler
+    // would keep creating transactions for an account that no longer exists.
+    await ScheduledPayment.deleteMany({ user: req.user._id });
     await User.findByIdAndDelete(req.user._id);
     res.json({ message: 'Account deleted' });
   } catch (error) {
