@@ -1,4 +1,5 @@
 node_modules/
+package-lock.json
 
 # .env holds real secrets (MONGO_URI, JWT_SECRET) — never commit it.
 .env

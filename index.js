@@ -51,9 +51,24 @@ app.get('/health', (req, res) => {
 // registered: requiring a route compiles its mongoose model, and mongoose then
 // builds indexes — a write that materializes the database. Initialization has
 // to win that race so a genuinely missing database is still detected as missing.
-const start = async () => {
-  await connectDB();
+let readyPromise = null;
 
+const ensureReady = () => {
+  if (!readyPromise) {
+    readyPromise = (async () => {
+      await connectDB();
+      registerRoutes();
+    })().catch((error) => {
+      // Drop the failed promise so the next request/server start can retry.
+      readyPromise = null;
+      throw error;
+    });
+  }
+  // Memoized: on Vercel the connection is reused across warm invocations.
+  return readyPromise;
+};
+
+const registerRoutes = () => {
   // API routes under a configurable mount (default /api)
   app.use(`${API_MOUNT}/auth`, require('./routes/auth'));
   app.use(`${API_MOUNT}/expenses`, require('./routes/expenses'));
@@ -93,21 +108,41 @@ const start = async () => {
     console.error(err.stack);
     res.status(500).json({ message: 'Server error' });
   });
-
-  // Only accept traffic once the database is connected and initialized, so no
-  // API request ever runs against an uninitialized database.
-  app.listen(PORT, () => {
-    console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`);
-    console.log(`API mounted at ${API_MOUNT}`);
-    if (clientExists) {
-      console.log(`Serving client from ${CLIENT_DIST} at ${CLIENT_BASE}`);
-    } else {
-      console.log(`Client build not found at ${CLIENT_DIST} — run "npm run build" in client/`);
-    }
-  });
 };
 
-start().catch(() => {
-  console.error('Server startup aborted: MongoDB is unavailable (see error above).');
-  process.exit(1);
-});
+if (process.env.VERCEL) {
+  // Serverless (Vercel): no app.listen(). Vercel invokes this exported
+  // (req, res) function per request; we await DB connect/init first, then hand
+  // off to Express. connectDB() already logs the underlying failure.
+  module.exports = (req, res) =>
+    ensureReady().then(
+      () => app(req, res),
+      (error) => {
+        console.error(`Request aborted, MongoDB unavailable: ${error.message}`);
+        res.statusCode = 500;
+        res.setHeader('Content-Type', 'application/json');
+        res.end(JSON.stringify({ message: 'Server error: database unavailable' }));
+      }
+    );
+} else {
+  // Local / long-running host: one-time init, then accept traffic only once
+  // the database is connected and initialized.
+  ensureReady()
+    .then(() => {
+      app.listen(PORT, () => {
+        console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`);
+        console.log(`API mounted at ${API_MOUNT}`);
+        if (fs.existsSync(path.join(CLIENT_DIST, 'index.html'))) {
+          console.log(`Serving client from ${CLIENT_DIST} at ${CLIENT_BASE}`);
+        } else {
+          console.log(
+            `Client build not found at ${CLIENT_DIST} — run "npm run build" in client/`
+          );
+        }
+      });
+    })
+    .catch(() => {
+      console.error('Server startup aborted: MongoDB is unavailable (see error above).');
+      process.exit(1);
+    });
+}
