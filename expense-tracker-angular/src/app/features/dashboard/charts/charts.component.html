@@ -1,0 +1,127 @@
+<div class="charts-section">
+  <!-- Category Breakdown -->
+  <div class="chart-card">
+    <div class="chart-title">
+      <h3>
+        <span class="chart-icon"><ng-icon name="phosphorChartPieSlice" /></span> By Category
+        @if (activeFilter()?.type === 'category') {
+          <span class="chart-active-badge">{{ activeFilter()?.value }}</span>
+        }
+      </h3>
+      <div class="chart-type-switch">
+        <button
+          type="button"
+          class="chart-type-btn"
+          [class.active]="categoryChartType() === 'pie'"
+          (click)="categoryChartType.set('pie')"
+        >
+          Pie
+        </button>
+        <button
+          type="button"
+          class="chart-type-btn"
+          [class.active]="categoryChartType() === 'bar'"
+          (click)="categoryChartType.set('bar')"
+        >
+          Bar
+        </button>
+      </div>
+    </div>
+
+    @if (categoryData().length > 0) {
+      @if (categoryChartType() === 'pie') {
+        <div class="chart-canvas-wrap">
+          <div class="chart-canvas">
+            <canvas
+              baseChart
+              [type]="'doughnut'"
+              [data]="categoryPieData()"
+              [options]="categoryPieChartOptions()"
+            ></canvas>
+          </div>
+          <ul class="chart-legend">
+            @for (item of legendItems(); track item.name) {
+              <li class="chart-legend-item">
+                <span
+                  class="chart-legend-icon"
+                  [style.background]="item.color"
+                ></span>
+                <span class="chart-legend-item-text">{{ item.name }}</span>
+              </li>
+            }
+          </ul>
+        </div>
+      } @else {
+        <div class="chart-canvas-wrap">
+          <div class="chart-canvas">
+            <canvas
+              baseChart
+              [type]="'bar'"
+              [data]="categoryBarData()"
+              [options]="categoryBarChartOptions()"
+            ></canvas>
+          </div>
+        </div>
+      }
+    } @else {
+      <div class="chart-placeholder">
+        <span class="chart-placeholder-icon"><ng-icon name="phosphorChartPieSlice" /></span>
+        No expenses for this time range
+      </div>
+    }
+  </div>
+
+  <!-- Payment Method -->
+  <div class="chart-card">
+    <h3>
+      <span class="chart-icon"><ng-icon name="phosphorCreditCard" /></span> By Payment Method
+      @if (activeFilter()?.type === 'payment') {
+        <span class="chart-active-badge">{{ paymentBadge() }}</span>
+      }
+    </h3>
+
+    @if (paymentData().length > 0) {
+      <div class="chart-canvas-wrap">
+        <div class="chart-canvas">
+          <canvas
+            baseChart
+            [type]="'doughnut'"
+            [data]="paymentChartData()"
+            [options]="paymentChartOptions()"
+            [plugins]="chartPlugins"
+          ></canvas>
+        </div>
+      </div>
+    } @else {
+      <div class="chart-placeholder">
+        <span class="chart-placeholder-icon"><ng-icon name="phosphorCreditCard" /></span>
+        No expenses for this time range
+      </div>
+    }
+  </div>
+
+  <!-- Daily Trend -->
+  <div class="chart-card wide">
+    <h3>
+      <span class="chart-icon"><ng-icon name="phosphorTrendUp" /></span> Daily Trend
+    </h3>
+
+    @if (trendData().length > 0) {
+      <div class="chart-canvas-wrap">
+        <div class="chart-canvas">
+          <canvas
+            baseChart
+            [type]="'line'"
+            [data]="trendChartData()"
+            [options]="trendChartOptions()"
+          ></canvas>
+        </div>
+      </div>
+    } @else {
+      <div class="chart-placeholder">
+        <span class="chart-placeholder-icon"><ng-icon name="phosphorTrendUp" /></span>
+        No spending in this period yet
+      </div>
+    }
+  </div>
+</div>

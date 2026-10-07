@@ -1,0 +1,154 @@
+﻿/* =============================================
+   DESIGN TOKENS
+   Neutral-first system with a single red accent.
+   Light + dark pair over a neutral (zinc) base.
+   ============================================= */
+
+:root,
+[data-theme='light'] {
+  /* Accent (spend / brand / focus) */
+  --primary: #dc2626;
+  --primary-hover: #b91c1c;
+  --primary-active: #991b1b;
+  --primary-soft: rgba(220, 38, 38, 0.09);
+  --primary-softer: rgba(220, 38, 38, 0.05);
+  --primary-strong: #fff1f1;
+  --ring: rgba(220, 38, 38, 0.28);
+  --on-primary: #ffffff;
+
+  /* Semantic danger */
+  --danger: #dc2626;
+  --danger-hover: #b91c1c;
+  --danger-soft: rgba(220, 38, 38, 0.09);
+  --danger-solid: #dc2626;
+  --on-danger: #ffffff;
+
+  /* Surfaces - clean neutral */
+  --bg: #fafafa;
+  --bg-elevated: #ffffff;
+  --card-bg: #ffffff;
+  --card-bg-hover: #f7f7f8;
+  --surface: #f4f4f5;
+  --surface-2: #e8e8ea;
+
+  /* Borders - hairline system */
+  --border: #e9e9eb;
+  --border-strong: #d3d4d9;
+  --border-accent: rgba(220, 38, 38, 0.4);
+
+  /* Text */
+  --text: #18181b;
+  --text-secondary: #4b4b52;
+  --text-muted: #79707a;
+  --text-faint: #a4a4ad;
+
+  /* Elevation - tinted, tight */
+  --shadow-xs: 0 1px 2px rgba(24, 24, 27, 0.04);
+  --shadow-sm: 0 1px 3px rgba(24, 24, 27, 0.05), 0 1px 2px rgba(24, 24, 27, 0.04);
+  --shadow-md: 0 6px 16px -6px rgba(24, 24, 27, 0.12), 0 2px 6px -2px rgba(24, 24, 27, 0.06);
+  --shadow-lg: 0 18px 44px -12px rgba(24, 24, 27, 0.2), 0 4px 12px -6px rgba(24, 24, 27, 0.08);
+
+  /* Radius - one documented scale */
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  /* Glass */
+  --glass: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(24, 24, 27, 0.07);
+
+  /* Positive / money-in */
+  --success-text: #057a55;
+  --success-bg: rgba(5, 150, 105, 0.1);
+  --success-border: rgba(5, 150, 105, 0.28);
+
+  /* Warning */
+  --warning-text: #92400e;
+  --warning-bg: rgba(217, 119, 6, 0.1);
+  --warning-border: rgba(217, 119, 6, 0.32);
+
+  color: var(--text);
+  background: var(--bg);
+}
+
+[data-theme='light'] body {
+  background-color: var(--bg);
+}
+
+[data-theme='dark'] {
+  /* Accent (spend / brand / focus) */
+  --primary: #f87171;
+  --primary-hover: #fb9280;
+  --primary-active: #fca5a5;
+  --primary-soft: rgba(248, 113, 113, 0.12);
+  --primary-softer: rgba(248, 113, 113, 0.06);
+  --primary-strong: #2a0d0d;
+  --ring: rgba(248, 113, 113, 0.4);
+  --on-primary: #2a0d0d;
+
+  --danger: #f87171;
+  --danger-hover: #fb9280;
+  --danger-soft: rgba(248, 113, 113, 0.12);
+  --danger-solid: #e5484d;
+  --on-danger: #ffffff;
+
+  /* Surfaces - pure neutral */
+  --bg: #0b0b0d;
+  --bg-elevated: #121214;
+  --card-bg: #141416;
+  --card-bg-hover: #19191d;
+  --surface: #1c1c20;
+  --surface-2: #27272c;
+
+  --border: #26262b;
+  --border-strong: #3a3a42;
+  --border-accent: rgba(248, 113, 113, 0.4);
+
+  --text: #f4f4f5;
+  --text-secondary: #b0b0ba;
+  --text-muted: #85858f;
+  --text-faint: #5c5c66;
+
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.3);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.35), 0 1px 2px rgba(0, 0, 0, 0.25);
+  --shadow-md: 0 6px 16px -6px rgba(0, 0, 0, 0.5), 0 2px 6px -2px rgba(0, 0, 0, 0.3);
+  --shadow-lg: 0 18px 44px -12px rgba(0, 0, 0, 0.62), 0 4px 12px -6px rgba(0, 0, 0, 0.35);
+
+  --radius-xs: 6px;
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-pill: 999px;
+
+  --glass: rgba(11, 11, 13, 0.78);
+  --glass-border: rgba(255, 255, 255, 0.07);
+
+  --success-text: #34d399;
+  --success-bg: rgba(52, 211, 153, 0.1);
+  --success-border: rgba(52, 211, 153, 0.32);
+
+  --warning-text: #fbbf24;
+  --warning-bg: rgba(251, 191, 36, 0.1);
+  --warning-border: rgba(251, 191, 36, 0.32);
+
+  color: var(--text);
+  background: var(--bg);
+}
+
+[data-theme='dark'] body {
+  background-color: var(--bg);
+}
+
+/* =============================================
+   TYPOGRAPHY + MOTION TOKENS (theme-independent)
+   ============================================= */
+:root {
+  --font-sans: 'Inter', system-ui, -apple-system, 'Segoe UI', Roboto, Arial, sans-serif;
+  --ease: cubic-bezier(0.2, 0.8, 0.2, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
+  --duration-fast: 140ms;
+  --duration-base: 220ms;
+  --duration-slow: 320ms;
+}

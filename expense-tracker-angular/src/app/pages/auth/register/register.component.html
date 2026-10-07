@@ -1,0 +1,85 @@
+<div class="auth-page">
+  <div class="auth-card">
+    <div class="auth-brand">
+      <span class="auth-brand-logo">₹</span>
+      <span class="auth-brand-name">Expense Tracker</span>
+    </div>
+    <h1>Create Account</h1>
+    <p class="auth-subtitle">Start tracking your spending in under a minute</p>
+    @if (error()) {
+      <div class="alert alert-error" role="alert">{{ error() }}</div>
+    }
+    <form (submit)="onSubmit($event)">
+      <div class="form-group">
+        <label for="name">
+          Name<span class="field-req">*</span>
+        </label>
+        <input
+          id="name"
+          type="text"
+          [value]="name()"
+          (input)="name.set($any($event).target.value)"
+          required
+          placeholder="Your name"
+          autocomplete="name"
+        />
+      </div>
+      <div class="form-group">
+        <label for="email">
+          Email<span class="field-req">*</span>
+        </label>
+        <input
+          id="email"
+          type="email"
+          [value]="email()"
+          (input)="email.set($any($event).target.value)"
+          required
+          placeholder="you@example.com"
+          autocomplete="email"
+        />
+      </div>
+      <div class="form-row">
+        <div class="form-group">
+          <label for="password">
+            Password<span class="field-req">*</span>
+          </label>
+          <input
+            id="password"
+            type="password"
+            [value]="password()"
+            (input)="password.set($any($event).target.value)"
+            required
+            minlength="6"
+            placeholder="At least 6 characters"
+            autocomplete="new-password"
+          />
+        </div>
+        <div class="form-group">
+          <label for="confirmPassword">
+            Confirm<span class="field-req">*</span>
+          </label>
+          <input
+            id="confirmPassword"
+            type="password"
+            [value]="confirmPassword()"
+            (input)="confirmPassword.set($any($event).target.value)"
+            required
+            placeholder="Re-enter password"
+            autocomplete="new-password"
+          />
+        </div>
+      </div>
+      <button type="submit" class="btn btn-primary btn-block" [disabled]="loading()">
+        @if (loading()) {
+          <span class="btn-spinner" aria-hidden="true"></span>
+          Creating account…
+        } @else {
+          Sign Up
+        }
+      </button>
+    </form>
+    <p class="auth-footer">
+      Already have an account? <a routerLink="/login">Log in</a>
+    </p>
+  </div>
+</div>

@@ -1,0 +1,260 @@
+@if (loading()) {
+  <div class="empty-state">
+    <div class="empty-state-icon"><ng-icon name="phosphorHourglass" /></div>
+    <p>Loading your profile…</p>
+  </div>
+} @else {
+  <div class="profile-page">
+    @if (message(); as notice) {
+      <div
+        class="alert"
+        [class.alert-error]="notice.type === 'error'"
+        [class.alert-success]="notice.type === 'success'"
+        [attr.role]="notice.type === 'error' ? 'alert' : 'status'"
+      >
+        {{ notice.text }}
+      </div>
+    }
+
+    <div class="profile-header">
+      <app-avatar [name]="user()?.name ?? ''" [size]="84" [className]="'profile-avatar-img'" />
+      <div class="profile-id">
+        <h1>{{ profile()?.name || user()?.name }}</h1>
+        <p>{{ profile()?.email || user()?.email }}</p>
+        <span class="profile-since">Member since {{ formatJoinDate(profile()?.createdAt) }}</span>
+      </div>
+    </div>
+
+    <div class="profile-stats">
+      @for (s of statsConfig; track s.key) {
+        <div class="stat-card">
+          <span class="stat-icon"><ng-icon [name]="s.icon" /></span>
+          <div>
+            <div class="stat-value" [class.long]="s.key === 'topCategory'">{{ statValue(s.key) }}</div>
+            <div class="stat-label">{{ s.label }}</div>
+          </div>
+        </div>
+      }
+    </div>
+
+    <div class="settings-section" id="settings">
+      <h2>
+        <span class="section-icon"><ng-icon name="phosphorGear" /></span> Account Settings
+      </h2>
+
+      <div class="setting-card">
+        <div class="setting-card-header">
+          <span class="setting-card-icon"><ng-icon name="phosphorTag" /></span>
+          <h3>Update Name</h3>
+        </div>
+        <form (submit)="onNameSubmit($event)" class="setting-form">
+          <input
+            type="text"
+            [value]="name()"
+            (input)="name.set($any($event.target).value)"
+            placeholder="Your name"
+            aria-label="Your name"
+          />
+          <button type="submit" class="btn btn-primary" [disabled]="savingName()">
+            {{ savingName() ? 'Saving…' : 'Save' }}
+          </button>
+        </form>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-card-header">
+          <span class="setting-card-icon"><ng-icon name="phosphorPalette" /></span>
+          <h3>Appearance</h3>
+        </div>
+        <p class="setting-desc">Choose how the app looks on this device.</p>
+        <div class="theme-radios">
+          @for (opt of themeOptions; track opt.value) {
+            <button
+              type="button"
+              class="theme-radio"
+              [class.active]="theme() === opt.value"
+              (click)="selectTheme(opt.value)"
+              [attr.aria-pressed]="theme() === opt.value"
+            >
+              <span class="theme-radio-label"><ng-icon [name]="opt.icon" /> {{ opt.label }}</span>
+              <span class="theme-radio-desc">{{ opt.desc }}</span>
+            </button>
+          }
+        </div>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-card-header">
+          <span class="setting-card-icon"><ng-icon name="phosphorFolder" /></span>
+          <h3>Custom Categories</h3>
+        </div>
+        <p class="setting-desc">Add your own categories so they appear in the Add Expense form.</p>
+        <form (submit)="onAddCategorySubmit($event)" class="setting-form">
+          <input
+            type="text"
+            [value]="newCategory()"
+            (input)="newCategory.set($any($event.target).value)"
+            placeholder="e.g. Pets, Subscriptions"
+            maxlength="24"
+            aria-label="New category name"
+          />
+          <button type="submit" class="btn btn-primary" [disabled]="addingCategory()">
+            {{ addingCategory() ? 'Adding…' : 'Add' }}
+          </button>
+        </form>
+        @if (customCategories().length > 0) {
+          <div class="tag-list">
+            @for (cat of customCategories(); track cat) {
+              <span class="tag">
+                {{ cat }}
+                <button
+                  type="button"
+                  class="tag-remove"
+                  (click)="onRemoveCategory(cat)"
+                  [attr.aria-label]="'Remove ' + cat"
+                >
+                  <ng-icon name="phosphorX" />
+                </button>
+              </span>
+            }
+          </div>
+        } @else {
+          <p class="setting-empty">No custom categories yet.</p>
+        }
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-card-header">
+          <span class="setting-card-icon"><ng-icon name="phosphorDeviceMobile" /></span>
+          <h3>Custom UPI Apps</h3>
+        </div>
+        <p class="setting-desc">Add your payment apps so they show up when you pay by UPI.</p>
+        <form (submit)="onAddUpiAppSubmit($event)" class="setting-form">
+          <input
+            type="text"
+            [value]="newUpiApp()"
+            (input)="newUpiApp.set($any($event.target).value)"
+            placeholder="e.g. Cred, Mobikwik"
+            maxlength="24"
+            aria-label="New UPI app name"
+          />
+          <button type="submit" class="btn btn-primary" [disabled]="addingUpiApp()">
+            {{ addingUpiApp() ? 'Adding…' : 'Add' }}
+          </button>
+        </form>
+        @if (customUpiApps().length > 0) {
+          <div class="tag-list">
+            @for (app of customUpiApps(); track app) {
+              <span class="tag">
+                {{ app }}
+                <button
+                  type="button"
+                  class="tag-remove"
+                  (click)="onRemoveUpiApp(app)"
+                  [attr.aria-label]="'Remove ' + app"
+                >
+                  <ng-icon name="phosphorX" />
+                </button>
+              </span>
+            }
+          </div>
+        } @else {
+          <p class="setting-empty">No custom UPI apps yet.</p>
+        }
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-card-header">
+          <span class="setting-card-icon"><ng-icon name="phosphorLockKey" /></span>
+          <h3>Change Password</h3>
+        </div>
+        <form (submit)="onPasswordSubmit($event)" class="setting-form">
+          <div class="setting-form-grid">
+            <div class="form-group">
+              <label for="currentPassword">Current Password</label>
+              <input
+                id="currentPassword"
+                type="password"
+                [value]="currentPassword()"
+                (input)="currentPassword.set($any($event.target).value)"
+                required
+                autocomplete="current-password"
+              />
+            </div>
+            <div class="form-group">
+              <label for="newPassword">New Password</label>
+              <input
+                id="newPassword"
+                type="password"
+                [value]="newPassword()"
+                (input)="newPassword.set($any($event.target).value)"
+                minlength="6"
+                required
+                autocomplete="new-password"
+              />
+            </div>
+            <div class="form-group">
+              <label for="confirmPassword">Confirm New Password</label>
+              <input
+                id="confirmPassword"
+                type="password"
+                [value]="confirmPassword()"
+                (input)="confirmPassword.set($any($event.target).value)"
+                required
+                autocomplete="new-password"
+              />
+            </div>
+          </div>
+          <button type="submit" class="btn btn-primary" [disabled]="savingPassword()">
+            @if (savingPassword()) {
+              <span class="btn-spinner" aria-hidden="true"></span>
+              Updating…
+            } @else {
+              Update Password
+            }
+          </button>
+        </form>
+      </div>
+
+      <div class="setting-card">
+        <div class="setting-card-header">
+          <span class="setting-card-icon"><ng-icon name="phosphorLockSimple" /></span>
+          <h3>Session</h3>
+        </div>
+        <p class="setting-desc">Signed in as {{ user()?.email }}. Log out to switch accounts.</p>
+        <div class="setting-form">
+          <button type="button" class="btn btn-ghost" (click)="auth.logout()">
+            <ng-icon name="phosphorSignOut" /> Logout
+          </button>
+        </div>
+      </div>
+
+      <div class="setting-card danger">
+        <div class="setting-card-header">
+          <span class="setting-card-icon"><ng-icon name="phosphorWarning" /></span>
+          <h3>Danger Zone</h3>
+        </div>
+        <p class="setting-desc">
+          Deleting your account removes all your data permanently. This cannot be undone.
+        </p>
+        <div class="setting-form">
+          <input
+            type="text"
+            [value]="confirmDelete()"
+            (input)="confirmDelete.set($any($event.target).value)"
+            placeholder='Type "delete" to confirm'
+            aria-label='Type "delete" to confirm'
+          />
+          <button
+            type="button"
+            class="btn btn-danger"
+            (click)="onDeleteAccount()"
+            [disabled]="deleting()"
+          >
+            {{ deleting() ? 'Deleting…' : 'Delete Account' }}
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+}

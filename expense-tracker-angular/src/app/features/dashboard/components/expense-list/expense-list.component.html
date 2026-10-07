@@ -1,0 +1,104 @@
+@if (loading()) {
+  <div class="expense-list" aria-hidden="true">
+    @for (i of [0, 1, 2, 3]; track i) {
+      <div class="skeleton-row">
+        <div class="skeleton sk-circle"></div>
+        <div>
+          <div class="skeleton sk-line mid"></div>
+          <div class="skeleton sk-line short"></div>
+        </div>
+        <div class="skeleton sk-bar"></div>
+      </div>
+    }
+  </div>
+} @else if (!expenses().length) {
+  <div class="empty-state">
+    <div class="empty-state-icon">
+      @if (hasFilters()) {
+        <ng-icon name="phosphorMagnifyingGlass" />
+      } @else {
+        <ng-icon name="phosphorTrendDown" />
+      }
+    </div>
+    <h3>{{ hasFilters() ? 'No matching expenses' : 'No expenses yet' }}</h3>
+    <p>
+      {{
+        hasFilters()
+          ? 'Try adjusting your filters or date range to find what you are looking for.'
+          : 'Click "Add Expense" to record your first expense and start tracking your spending.'
+      }}
+    </p>
+    @if (!hasFilters()) {
+      <button class="btn btn-primary btn-sm" (click)="add.emit()">
+        <ng-icon name="phosphorPlus" /> Add your first expense
+      </button>
+    }
+  </div>
+} @else {
+  <div class="expense-list">
+    @for (expense of expenses(); track expense._id; let idx = $index) {
+      <div
+        class="expense-item"
+        [class.income-item]="expense.type === 'income'"
+        [style.animation-delay]="animDelay(idx)"
+      >
+        <div class="expense-info">
+          <div class="expense-avatar"><ng-icon [name]="getCategoryIcon(expense.category)" /></div>
+          <div>
+            <div class="expense-description" [title]="expense.description">
+              {{ expense.description }}
+            </div>
+            <div class="expense-meta">
+              <span class="expense-category" [class.category-income]="expense.type === 'income'">
+                {{ expense.category }}
+              </span>
+              <span class="payment-badge" [class]="expense.paymentMethod">
+                @switch (expense.paymentMethod) {
+                  @case ('upi') {
+                    <ng-icon name="phosphorDeviceMobile" />
+                  }
+                  @case ('bank') {
+                    <ng-icon name="phosphorBank" />
+                  }
+                  @default {
+                    <ng-icon name="phosphorMoney" />
+                  }
+                }
+                {{ paymentLabel(expense) }}
+              </span>
+              <span class="expense-date">{{ formatDate(expense.date) }}</span>
+            </div>
+          </div>
+        </div>
+        <div class="expense-right">
+          <div class="expense-amount" [class.amount-income]="expense.type === 'income'">
+            {{ expense.type === 'income' ? '+' : '' }}{{ formatCurrency(expense.amount) }}
+          </div>
+          <div class="expense-actions">
+            <button
+              class="icon-btn"
+              (click)="edit.emit(expense)"
+              [title]="'Edit'"
+              [attr.aria-label]="'Edit ' + expense.description"
+            >
+              <ng-icon name="phosphorPencilSimple" />
+            </button>
+            <button
+              class="icon-btn danger"
+              [class.confirming]="confirmId() === expense._id"
+              (click)="handleTrashClick(expense._id)"
+              [title]="confirmId() === expense._id ? 'Click again to confirm' : 'Delete'"
+              [attr.aria-label]="'Delete ' + expense.description"
+            >
+              @if (confirmId() === expense._id) {
+                <ng-icon name="phosphorCheck" />
+              } @else {
+                <ng-icon name="phosphorTrash" />
+              }
+            </button>
+          </div>
+        </div>
+      </div>
+    }
+  </div>
+}

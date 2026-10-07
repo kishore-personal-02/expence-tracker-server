@@ -1,0 +1,182 @@
+<form (submit)="onSubmit($event)" class="expense-form" novalidate>
+  @if (error()) {
+    <div class="alert alert-error" role="alert">{{ error() }}</div>
+  }
+
+  <!-- Amount — hero input -->
+  <div class="form-group">
+    <label for="amount">
+      Amount<span class="field-req">*</span>
+    </label>
+    <div class="amount-wrap">
+      <span class="amount-currency">₹</span>
+      <input
+        id="amount"
+        type="number"
+        [value]="amount()"
+        (input)="amount.set($any($event).target.value)"
+        placeholder="0"
+        min="0"
+        step="0.01"
+        [attr.aria-invalid]="invalid()"
+      />
+    </div>
+    <div class="quick-amounts" aria-label="Quick amounts">
+      @for (amt of quickAmounts; track amt) {
+        <button
+          type="button"
+          class="quick-amount"
+          [class.active]="isQuickAmountActive(amt)"
+          (click)="quickPick(amt)"
+        >
+          ₹{{ amt }}
+        </button>
+      }
+    </div>
+  </div>
+
+  <!-- Description -->
+  <div class="form-group">
+    <label for="description">
+      Description<span class="field-req">*</span>
+    </label>
+    <input
+      id="description"
+      type="text"
+      [value]="description()"
+      (input)="description.set($any($event).target.value)"
+      [placeholder]="isIncome() ? 'e.g. Salary, Refund, Interest' : 'e.g. Lunch, Groceries, Rent'"
+      required
+    />
+  </div>
+
+  <!-- Type — expense / income -->
+  <div class="form-group">
+    <label id="type-label">Type</label>
+    <div class="payment-toggle" role="radiogroup" aria-labelledby="type-label">
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="!isIncome()"
+        class="payment-pill"
+        [class.active]="!isIncome()"
+        (click)="type.set('expense')"
+      >
+        <span class="pm-icon"><ng-icon name="phosphorTrendDown" /></span> Expense
+      </button>
+      <button
+        type="button"
+        role="radio"
+        [attr.aria-checked]="isIncome()"
+        class="payment-pill income-pill"
+        [class.active]="isIncome()"
+        (click)="type.set('income')"
+      >
+        <span class="pm-icon"><ng-icon name="phosphorCoins" /></span> Income
+      </button>
+    </div>
+  </div>
+
+  @if (!isIncome()) {
+    <!-- Category — icon grid -->
+    <div class="form-group">
+      <label id="category-label">Category</label>
+      <div class="category-grid" role="radiogroup" aria-labelledby="category-label">
+        @for (cat of categories(); track cat) {
+          <button
+            type="button"
+            role="radio"
+            [attr.aria-checked]="category() === cat"
+            class="category-chip"
+            [class.active]="category() === cat"
+            (click)="category.set(cat)"
+          >
+            <span class="category-chip-icon"><ng-icon [name]="getCategoryIcon(cat)" /></span>
+            <span class="category-chip-label">{{ cat }}</span>
+          </button>
+        }
+      </div>
+    </div>
+
+    <!-- Payment method -->
+    <div class="form-group">
+      <label id="payment-label">Payment Method</label>
+      <div class="payment-toggle" role="radiogroup" aria-labelledby="payment-label">
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="paymentMethod() === 'cash'"
+          class="payment-pill"
+          [class.active]="paymentMethod() === 'cash'"
+          (click)="paymentMethod.set('cash')"
+        >
+          <span class="pm-icon"><ng-icon name="phosphorMoney" /></span> Cash
+        </button>
+        <button
+          type="button"
+          role="radio"
+          [attr.aria-checked]="paymentMethod() === 'upi'"
+          class="payment-pill"
+          [class.active]="paymentMethod() === 'upi'"
+          (click)="paymentMethod.set('upi')"
+        >
+          <span class="pm-icon"><ng-icon name="phosphorDeviceMobile" /></span> UPI
+        </button>
+      </div>
+    </div>
+
+    @if (paymentMethod() === 'upi') {
+      <div class="form-group">
+        <label id="upi-label">UPI App</label>
+        <div class="upi-app-grid" role="radiogroup" aria-labelledby="upi-label">
+          @for (app of upiApps(); track app) {
+            <button
+              type="button"
+              role="radio"
+              [attr.aria-checked]="upiApp() === app"
+              class="upi-chip"
+              [class.active]="upiApp() === app"
+              (click)="upiApp.set(app)"
+            >
+              {{ app }}
+            </button>
+          }
+        </div>
+      </div>
+    }
+  }
+
+  @if (isIncome()) {
+    <div class="form-hint income-hint">
+      <ng-icon name="phosphorCoins" /> Income is recorded under the <strong>Income</strong> category and does not count toward
+      your spending totals.
+    </div>
+  }
+
+  <!-- Date -->
+  <div class="form-group">
+    <label for="date">
+      Date<span class="field-req">*</span>
+    </label>
+    <input
+      id="date"
+      type="date"
+      [value]="date()"
+      (input)="date.set($any($event).target.value)"
+      required
+    />
+  </div>
+
+  <button type="submit" class="btn btn-primary btn-block" [disabled]="submitting()">
+    @if (submitting()) {
+      <span class="btn-spinner" aria-hidden="true"></span>
+      Saving…
+    } @else if (initialExpense()) {
+      <ng-icon name="phosphorFloppyDisk" /> Save Changes
+    } @else if (isIncome()) {
+      <ng-icon name="phosphorCoins" /> Add Income
+    } @else {
+      <ng-icon name="phosphorPlus" /> Add Expense
+    }
+  </button>
+</form>

@@ -1,0 +1,123 @@
+<div class="dashboard">
+  <!-- Page header -->
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Dashboard</h1>
+      <p class="page-subtitle">{{ greeting() }} — here's an overview of your expenses.</p>
+    </div>
+    <button class="btn btn-primary" (click)="openAddModal()">
+      <ng-icon name="phosphorPlus" />
+      Add Expense
+    </button>
+  </header>
+
+  <!-- Summary cards -->
+  <section class="dashboard-summary">
+    <div class="summary-card highlight">
+      <div class="summary-icon"><ng-icon name="phosphorTrendDown" /></div>
+      <span class="summary-label">Total Spent</span>
+      <span class="summary-value">{{ formatCurrency(totalSpent()) }}</span>
+      <span class="summary-count">{{ expenseCountText() }}</span>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon"><ng-icon name="phosphorCoins" /></div>
+      <span class="summary-label">Income</span>
+      <span class="summary-value summary-income">{{ formatCurrency(totalIncome()) }}</span>
+      <span class="summary-count">{{ incomeCountText() }}</span>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon"><ng-icon name="phosphorMoney" /></div>
+      <span class="summary-label">Cash</span>
+      <span class="summary-value">{{ formatCurrency(cashTotal()) }}</span>
+      <span class="summary-count">{{ cashCount() }} payment(s)</span>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon"><ng-icon name="phosphorDeviceMobile" /></div>
+      <span class="summary-label">UPI</span>
+      <span class="summary-value">{{ formatCurrency(upiTotal()) }}</span>
+      <span class="summary-count">{{ upiCount() }} payment(s)</span>
+    </div>
+    <div class="summary-card">
+      <div class="summary-icon"><ng-icon name="phosphorBank" /></div>
+      <span class="summary-label">Bank</span>
+      <span class="summary-value">{{ formatCurrency(bankTotal()) }}</span>
+      <span class="summary-count">{{ bankCount() }} payment(s)</span>
+    </div>
+
+    <app-time-filter (rangeChange)="onTimeRangeChange($event)" />
+  </section>
+
+  @if (error()) {
+    <div class="alert alert-error" role="alert">
+      <span>{{ error() }}</span>
+      <button type="button" class="alert-dismiss" (click)="error.set('')" aria-label="Dismiss">
+        <ng-icon name="phosphorX" />
+      </button>
+    </div>
+  }
+
+  <!-- Charts + list -->
+  <section class="dashboard-body">
+    <app-charts
+      [summary]="summary()"
+      [activeFilter]="chartFilter()"
+      (filterChange)="handleChartFilter($event.type, $event.value)"
+    />
+
+    <!-- Expense list -->
+    <div class="expense-list-container">
+      <div class="expense-toolbar">
+        <h2>
+          <span class="toolbar-icon"><ng-icon name="phosphorListBullets" /></span> Your Expenses
+          @if (chartFilter()) {
+            <span class="toolbar-filter-badge">
+              {{ filterLabel() }}
+              <button class="badge-clear" (click)="clearChartFilter()"><ng-icon name="phosphorX" /></button>
+            </span>
+          }
+        </h2>
+        <div class="toolbar-filters">
+          <select
+            [value]="filter()"
+            (change)="filter.set($any($event).target.value)"
+            aria-label="Filter by category"
+          >
+            <option value="">All Categories</option>
+            @for (cat of categories(); track cat) {
+              <option [value]="cat">{{ cat }}</option>
+            }
+          </select>
+          <input
+            type="month"
+            [value]="month()"
+            (change)="month.set($any($event).target.value)"
+            class="month-filter"
+            aria-label="Filter by month"
+          />
+        </div>
+      </div>
+      <app-expense-list
+        [expenses]="displayedExpenses()"
+        [loading]="loading()"
+        [hasFilters]="hasActiveFilters()"
+        (edit)="startEdit($event)"
+        (delete)="handleDelete($event)"
+        (add)="openAddModal()"
+      />
+    </div>
+  </section>
+
+  <!-- Mobile add button -->
+  <button class="fab" (click)="openAddModal()" aria-label="Add expense">
+    <ng-icon name="phosphorPlus" />
+  </button>
+
+  @if (modalOpen()) {
+    <app-expense-modal
+      [editing]="editingExpense()"
+      [submitting]="submitting()"
+      (closed)="closeModal()"
+      (submitted)="editingExpense() ? handleEdit($event) : handleAdd($event)"
+    />
+  }
+</div>

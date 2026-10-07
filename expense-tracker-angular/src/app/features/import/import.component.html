@@ -1,0 +1,217 @@
+<div class="dashboard import-page">
+  <header class="page-header">
+    <div>
+      <h1 class="page-title">Import Statement</h1>
+      <p class="page-subtitle">
+        Upload a bank passbook or statement PDF and we&apos;ll detect the transactions for you.
+      </p>
+    </div>
+  </header>
+
+  <!-- Upload step -->
+  @if (entries().length === 0) {
+    <section class="import-upload">
+      <div class="dropzone" (dragover)="onDragOver($event)" (drop)="onDrop($event)">
+        <div class="dropzone-icon"><ng-icon name="phosphorFolderOpen" /></div>
+        <h3>Drop your PDF here</h3>
+        <p>Passbook PDFs, account statements, payment statements — any text-based PDF works.</p>
+        <input
+          #fileInput
+          type="file"
+          id="statement-file"
+          accept="application/pdf,.pdf"
+          style="display: none"
+          (change)="onFileChange($event)"
+        />
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="onChooseClick()"
+          [disabled]="parsing()"
+        >
+          @if (parsing()) {
+            <span class="btn-spinner" aria-hidden="true"></span>
+            Parsing statement…
+          } @else {
+            <ng-icon name="phosphorFilePdf" /> Choose a PDF file
+          }
+        </button>
+        @if (parsing()) {
+          <div class="import-progress">
+            <span class="btn-spinner" aria-hidden="true"></span>
+            Reading statement…
+          </div>
+        }
+      </div>
+    </section>
+  }
+
+  @if (error()) {
+    <div class="alert alert-error" role="alert">
+      <span>{{ error() }}</span>
+      <button
+        type="button"
+        class="alert-dismiss"
+        (click)="error.set('')"
+        aria-label="Dismiss"
+      >
+        <ng-icon name="phosphorX" />
+      </button>
+    </div>
+  }
+
+  @if (success()) {
+    <div class="alert alert-success" role="alert">
+      <span>{{ success() }}</span>
+    </div>
+  }
+
+  <!-- Preview step -->
+  @if (entries().length > 0) {
+    <section class="import-preview">
+      <div class="import-preview-header">
+        <div class="import-file-info">
+          <span class="import-file-icon"><ng-icon name="phosphorFileText" /></span>
+          <div>
+            <strong>{{ fileName() }}</strong>
+            <div class="import-file-meta">
+              @if (bankName()) {
+                <span class="bank-badge"><ng-icon name="phosphorBank" /> {{ bankName() }}</span>
+              }
+              <span>{{ entries().length }} transactions detected</span>
+            </div>
+          </div>
+        </div>
+        <div class="import-totals">
+          <div class="import-total entry-expense">
+            <span>Expenses</span>
+            <strong>{{ formatCurrency(totals().expense) }}</strong>
+          </div>
+          <div class="import-total entry-income">
+            <span>Income</span>
+            <strong>{{ formatCurrency(totals().income) }}</strong>
+          </div>
+        </div>
+      </div>
+
+      @if (warning()) {
+        <div class="alert alert-warning" role="alert">
+          <span>{{ warning() }}</span>
+        </div>
+      }
+
+      <div class="import-table-wrap">
+        <table class="import-table">
+          <thead>
+            <tr>
+              <th class="col-check">
+                <input
+                  type="checkbox"
+                  [checked]="selectedEntries().length === entries().length"
+                  (change)="selectAll()"
+                  aria-label="Select all"
+                />
+              </th>
+              <th>Date</th>
+              <th>Description</th>
+              <th>Category</th>
+              <th>Type</th>
+              <th class="col-amount">Amount</th>
+              <th class="col-remove"></th>
+            </tr>
+          </thead>
+          <tbody>
+            @for (entry of entries(); track entry.key) {
+              <tr [class.row-unselected]="!entry.selected">
+                <td class="col-check">
+                  <input
+                    type="checkbox"
+                    [checked]="entry.selected"
+                    (change)="toggleEntry(entry.key)"
+                    [attr.aria-label]="'Include ' + entry.description"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="date"
+                    [value]="entry.date"
+                    (input)="onTextField(entry.key, 'date', $event)"
+                    aria-label="Date"
+                  />
+                </td>
+                <td>
+                  <input
+                    type="text"
+                    [value]="entry.description"
+                    (input)="onTextField(entry.key, 'description', $event)"
+                    aria-label="Description"
+                  />
+                </td>
+                <td>
+                  <select
+                    [value]="entry.category"
+                    (change)="onCategoryChange(entry.key, $event)"
+                    aria-label="Category"
+                  >
+                    @for (cat of categoryOptions(); track cat) {
+                      <option [value]="cat">{{ cat }}</option>
+                    }
+                  </select>
+                </td>
+                <td>
+                  <select
+                    [class.type-income]="entry.type === 'income'"
+                    [class.type-expense]="entry.type === 'expense'"
+                    [value]="entry.type"
+                    (change)="onTypeChange(entry.key, $event)"
+                    aria-label="Type"
+                  >
+                    <option value="expense">Expense</option>
+                    <option value="income">Income</option>
+                  </select>
+                </td>
+                <td class="col-amount">
+                  <span [class]="entry.type === 'income' ? 'amount-income' : 'amount-expense'">
+                    {{ entry.type === 'income' ? '+' : '−' }}{{ formatCurrency(entry.amount) }}
+                  </span>
+                </td>
+                <td class="col-remove">
+                  <button
+                    type="button"
+                    class="icon-btn danger"
+                    (click)="removeEntry(entry.key)"
+                    title="Remove"
+                    [attr.aria-label]="'Remove ' + entry.description"
+                  >
+                    <ng-icon name="phosphorX" />
+                  </button>
+                </td>
+              </tr>
+            }
+          </tbody>
+        </table>
+      </div>
+
+      <div class="import-actions">
+        <button type="button" class="btn btn-ghost" (click)="reset()">
+          <ng-icon name="phosphorArrowCounterClockwise" /> Start over
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary"
+          (click)="handleImport()"
+          [disabled]="importing() || selectedEntries().length === 0"
+        >
+          @if (importing()) {
+            <span class="btn-spinner" aria-hidden="true"></span>
+            Importing…
+          } @else {
+            <ng-icon name="phosphorDownloadSimple" /> Import {{ selectedEntries().length }} entr{{
+              selectedEntries().length === 1 ? 'y' : 'ies'
+            }}
+          }
+        </button>
+      </div>
+    </section>
+  }
+</div>

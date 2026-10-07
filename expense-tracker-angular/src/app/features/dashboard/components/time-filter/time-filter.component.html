@@ -1,0 +1,39 @@
+<div class="time-range-tabs" role="group" aria-label="Time range">
+  @for (opt of rangeOptions; track opt.key) {
+    <button
+      class="tab-btn"
+      [class.active]="activeRange() === opt.key"
+      (click)="handleTabChange(opt.key)"
+      [attr.aria-pressed]="activeRange() === opt.key"
+    >
+      {{ opt.label }}
+    </button>
+  }
+
+  @if (activeRange() === 'custom') {
+    <div class="date-range-inputs">
+      <label for="custom-start" class="visually-hidden">Start date</label>
+      <input
+        id="custom-start"
+        type="date"
+        [value]="customStart()"
+        (change)="customStart.set($any($event).target.value)"
+      />
+      <span>to</span>
+      <label for="custom-end" class="visually-hidden">End date</label>
+      <input
+        id="custom-end"
+        type="date"
+        [value]="customEnd()"
+        (change)="customEnd.set($any($event).target.value)"
+      />
+      <button
+        class="btn btn-sm btn-primary"
+        (click)="handleCustomDateChange()"
+        [disabled]="!customStart() || !customEnd()"
+      >
+        Apply
+      </button>
+    </div>
+  }
+</div>

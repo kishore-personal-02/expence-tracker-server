@@ -1,0 +1,25 @@
+<div class="modal-overlay" (click)="onOverlayClick($event)" (keyup.enter)="closed.emit()" (keyup.space)="closed.emit()" role="button" tabindex="-1" aria-label="Close">
+  <div
+    class="expense-modal"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="expense-modal-title"
+  >
+    <div class="modal-header">
+      <h2 class="modal-title" id="expense-modal-title">
+        <span class="modal-title-icon">
+          <ng-icon [name]="editing() ? 'phosphorPencilSimple' : 'phosphorPlus'" />
+        </span>
+        {{ editing() ? 'Edit Expense' : 'Add Expense' }}
+      </h2>
+      <button class="modal-close" (click)="closed.emit()" aria-label="Close">
+        <ng-icon name="phosphorX" />
+      </button>
+    </div>
+    <app-expense-form
+      [initialExpense]="editing()"
+      [submitting]="submitting()"
+      (submitted)="submitted.emit($event)"
+    />
+  </div>
+</div>
