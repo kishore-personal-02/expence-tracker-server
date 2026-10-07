@@ -60,23 +60,23 @@ const start = async () => {
   app.use(`${API_MOUNT}/import`, require('./routes/import'));
 
   // Serve the built frontend (production). CLIENT_DIST defaults to client/dist.
-  // const clientExists = fs.existsSync(path.join(CLIENT_DIST, 'index.html'));
-  // if (clientExists) {
-  //   app.use(CLIENT_BASE, express.static(CLIENT_DIST));
+  const clientExists = fs.existsSync(path.join(CLIENT_DIST, 'index.html'));
+  if (clientExists) {
+    app.use(CLIENT_BASE, express.static(CLIENT_DIST));
 
-  //   // SPA fallback: any non-API GET returns index.html so client-side routes work
-  //   const spaRoute = CLIENT_BASE === '/' ? '*' : `${CLIENT_BASE}/*`;
-  //   app.get(spaRoute, (req, res, next) => {
-  //     if (
-  //       req.path.startsWith(API_MOUNT) ||
-  //       req.path.startsWith('/api') ||
-  //       req.path === '/health'
-  //     ) {
-  //       return next();
-  //     }
-  //     res.sendFile(path.join(CLIENT_DIST, 'index.html'));
-  //   });
-  // }
+    // SPA fallback: any non-API GET returns index.html so client-side routes work
+    const spaRoute = CLIENT_BASE === '/' ? '*' : `${CLIENT_BASE}/*`;
+    app.get(spaRoute, (req, res, next) => {
+      if (
+        req.path.startsWith(API_MOUNT) ||
+        req.path.startsWith('/api') ||
+        req.path === '/health'
+      ) {
+        return next();
+      }
+      res.sendFile(path.join(CLIENT_DIST, 'index.html'));
+    });
+  }
 
   // Root info (shown only when no client build is being served)
   app.get('/', (req, res) => {
@@ -99,11 +99,11 @@ const start = async () => {
   app.listen(PORT, () => {
     console.log(`Server running in ${NODE_ENV} mode on port ${PORT}`);
     console.log(`API mounted at ${API_MOUNT}`);
-    // if (clientExists) {
-    //   console.log(`Serving client from ${CLIENT_DIST} at ${CLIENT_BASE}`);
-    // } else {
-    //   console.log(`Client build not found at ${CLIENT_DIST} — run "npm run build" in client/`);
-    // }
+    if (clientExists) {
+      console.log(`Serving client from ${CLIENT_DIST} at ${CLIENT_BASE}`);
+    } else {
+      console.log(`Client build not found at ${CLIENT_DIST} — run "npm run build" in client/`);
+    }
   });
 };
 
