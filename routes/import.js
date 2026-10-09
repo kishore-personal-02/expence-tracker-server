@@ -1,8 +1,8 @@
 const express = require('express');
 const multer = require('multer');
-const Expense = require('../models/Expense');
 const { protect } = require('../middleware/auth');
-const { parseStatementPdf } = require('../utils/pdfParser');
+const { parseImportFile } = require('../services/paymentImport');
+const { confirmImport } = require('../services/paymentImport/confirmImport');
 
 const router = express.Router();
 
@@ -10,87 +10,112 @@ const upload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: 15 * 1024 * 1024 },
   fileFilter: (req, file, cb) => {
-    const isPdf =
-      file.mimetype === 'application/pdf' ||
-      file.originalname.toLowerCase().endsWith('.pdf');
-    if (isPdf) return cb(null, true);
-    cb(new Error('Only PDF files are allowed'));
+    const name = (file.originalname || '').toLowerCase();
+    const mime = (file.mimetype || '').toLowerCase();
+    const isPdf = mime === 'application/pdf' || name.endsWith('.pdf');
+    const isCsv =
+      mime === 'text/csv' ||
+      mime === 'application/csv' ||
+      mime === 'application/vnd.ms-excel' ||
+      name.endsWith('.csv');
+    if (isPdf || isCsv) return cb(null, true);
+    cb(new Error('Only PDF and CSV files are allowed'));
   },
 });
 
 router.use(protect);
 
+function multerErrorResponse(uploadError) {
+  if (uploadError.message === 'Only PDF and CSV files are allowed') {
+    return uploadError.message;
+  }
+  if (uploadError.code === 'LIMIT_FILE_SIZE') {
+    return 'File is too large. Please upload a PDF or CSV under 15 MB.';
+  }
+  return 'File upload failed. Please upload a PDF or CSV under 15 MB.';
+}
+
 // @route   POST /api/import/parse
-// @desc    Upload a bank statement / passbook PDF and return detected transactions
+// @desc    Upload a PDF/CSV statement and return normalized preview rows.
+//          Nothing is written to the database here.
 // @access  Private
 router.post('/parse', (req, res) => {
   upload.single('file')(req, res, async (uploadError) => {
     if (uploadError) {
-      const message =
-        uploadError.message === 'Only PDF files are allowed'
-          ? uploadError.message
-          : 'File upload failed. Please upload a PDF under 15 MB.';
-      return res.status(400).json({ message });
+      return res.status(400).json({ message: multerErrorResponse(uploadError) });
     }
 
     if (!req.file) {
-      return res.status(400).json({ message: 'Please upload a PDF file' });
+      return res.status(400).json({ message: 'Please upload a PDF or CSV file' });
     }
 
     try {
-      const result = await parseStatementPdf(req.file.buffer);
-
-      res.json({
+      const result = await parseImportFile(req.file);
+      return res.json({
         fileName: req.file.originalname,
         size: req.file.size,
         ...result,
       });
     } catch (error) {
-      res.status(500).json({ message: error.message });
+      return res.status(error.status || 400).json({ message: error.message });
     }
   });
 });
 
+/**
+ * Shared confirmation core. Validates every row server-side, then inserts them
+ * with a durable idempotency guard keyed on (user, batchId).
+ */
+// @route   POST /api/import/confirm
+// @desc    Create payment entries after the user reviewed the preview.
+// @access  Private
+router.post('/confirm', async (req, res) => {
+  const { entries, batchId } = req.body || {};
+
+  if (typeof batchId !== 'string' || !batchId.trim()) {
+    return res.status(400).json({ message: 'A batch id is required to import transactions' });
+  }
+
+  try {
+    const result = await confirmImport(req.user._id, batchId.trim(), entries);
+    return res.status(201).json(result);
+  } catch (error) {
+    const body = { message: error.message };
+    if (error.details) body.details = error.details;
+    return res.status(error.status || 500).json(body);
+  }
+});
+
 // @route   POST /api/import/expenses
-// @desc    Save confirmed entries (from the parse preview) to the database
+// @desc    Legacy alias kept for backward compatibility. Accepts the old
+//          { entries: [{ type: 'expense' | 'income' }] } payload.
 // @access  Private
 router.post('/expenses', async (req, res) => {
-  try {
-    const rawEntries = Array.isArray(req.body.entries) ? req.body.entries : [];
+  const { entries, batchId } = req.body || {};
 
-    if (!rawEntries.length) {
-      return res.status(400).json({ message: 'No entries to import' });
-    }
-
-    const created = [];
-
-    for (const entry of rawEntries) {
-      const type = entry.type === 'income' ? 'income' : 'expense';
-      const amount = Math.abs(Number(entry.amount));
-      const date = new Date(entry.date);
-
-      if (!amount || Number.isNaN(date.getTime())) continue;
-
-      const description = String(entry.description || '').slice(0, 200).trim();
-
-      const expense = await Expense.create({
-        user: req.user._id,
-        description: description || (type === 'income' ? 'Bank credit' : 'Bank debit'),
-        amount,
-        type,
-        category: type === 'income' ? 'Income' : entry.category || 'Other',
-        paymentMethod: 'bank',
-        upiApp: null,
+  const normalized = Array.isArray(entries)
+    ? entries.map((entry) => ({
+        date: entry.date,
+        description: entry.description,
+        amount: entry.amount,
+        type: entry.type === 'income' || entry.type === 'credit' ? 'credit' : 'debit',
+        category: entry.category,
+        paymentMethod: entry.paymentMethod || 'bank',
+        upiApp: entry.upiApp || null,
         bankName: entry.bankName || null,
-        date,
-      });
+      }))
+    : [];
 
-      created.push(expense);
+  try {
+    const result = await confirmImport(req.user._id, batchId, normalized);
+    if (result.duplicate) {
+      return res.status(200).json(result);
     }
-
-    res.status(201).json({ imported: created.length, expenses: created });
+    return res.status(201).json(result);
   } catch (error) {
-    res.status(500).json({ message: error.message });
+    const body = { message: error.message };
+    if (error.details) body.details = error.details;
+    return res.status(error.status || 500).json(body);
   }
 });
 
