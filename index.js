@@ -76,6 +76,7 @@ const registerRoutes = () => {
   app.use(`${API_MOUNT}/scheduled-payments`, require('./routes/scheduledPayments'));
   app.use(`${API_MOUNT}/auto-pays`, require('./routes/autoPays'));
   app.use(`${API_MOUNT}/scheduler`, require('./routes/scheduler'));
+  app.use(`${API_MOUNT}/notifications`, require('./routes/notifications'));
 
   // Serve the built frontend (production). CLIENT_DIST defaults to client/dist.
   const clientExists = fs.existsSync(path.join(CLIENT_DIST, 'index.html'));

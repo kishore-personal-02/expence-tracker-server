@@ -128,7 +128,7 @@ router.get('/:id', async (req, res) => {
 // @access  Private
 router.post('/', async (req, res) => {
   try {
-    const { description, amount, category, date, paymentMethod, upiApp } = req.body;
+    const { description, amount, type, category, date, paymentMethod, upiApp } = req.body;
 
     if (!description || !amount || !category) {
       return res.status(400).json({
@@ -140,6 +140,7 @@ router.post('/', async (req, res) => {
       user: req.user._id,
       description,
       amount,
+      type: type === 'income' ? 'income' : 'expense',
       category,
       date: date ? new Date(date) : undefined,
       paymentMethod,
