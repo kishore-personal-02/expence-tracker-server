@@ -32,6 +32,25 @@ const userSchema = new mongoose.Schema(
       default: [],
       trim: true,
     },
+    // Opening balance is stored in integer minor units (paise) so the
+    // available-balance maths never accumulates floating-point drift.
+    openingBalanceMinor: {
+      type: Number,
+      default: 0,
+    },
+    currency: {
+      type: String,
+      default: 'INR',
+      trim: true,
+      uppercase: true,
+    },
+    // Highest month for which the monthly report notification was created.
+    // Persisted so the month-end rule can never fire twice for one month,
+    // even across restarts or timezone changes.
+    lastMonthlyNotificationMonth: {
+      type: String,
+      default: null,
+    },
   },
   {
     timestamps: true,

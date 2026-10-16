@@ -4,6 +4,7 @@ const bcrypt = require('bcryptjs');
 const User = require('../models/User');
 const Expense = require('../models/Expense');
 const ScheduledPayment = require('../models/ScheduledPayment');
+const Notification = require('../models/Notification');
 const { protect } = require('../middleware/auth');
 
 const router = express.Router();
@@ -26,11 +27,16 @@ const DEFAULT_CATEGORIES = [
 
 const DEFAULT_UPI_APPS = ['GPay', 'PhonePe', 'Paytm', 'Amazon Pay', 'BHIM', 'Other'];
 
+const DEFAULT_CURRENCY = 'INR';
+const SUPPORTED_CURRENCIES = ['INR', 'USD', 'EUR', 'GBP', 'AED'];
+
 const getPreferences = (user) => ({
   categories: [...DEFAULT_CATEGORIES, ...(user.customCategories || [])],
   upiApps: [...DEFAULT_UPI_APPS, ...(user.customUpiApps || [])],
   customCategories: user.customCategories || [],
   customUpiApps: user.customUpiApps || [],
+  openingBalanceMinor: user.openingBalanceMinor || 0,
+  currency: user.currency || DEFAULT_CURRENCY,
 });
 
 // @route   POST /api/auth/register
@@ -192,6 +198,7 @@ router.delete('/account', protect, async (req, res) => {
     // Scheduled/auto payments must go too, otherwise the background scheduler
     // would keep creating transactions for an account that no longer exists.
     await ScheduledPayment.deleteMany({ user: req.user._id });
+    await Notification.deleteMany({ user: req.user._id });
     await User.findByIdAndDelete(req.user._id);
     res.json({ message: 'Account deleted' });
   } catch (error) {
@@ -287,6 +294,38 @@ router.delete('/preferences/upi-apps/:name', protect, async (req, res) => {
     req.user.customUpiApps = (req.user.customUpiApps || []).filter(
       (a) => a !== req.params.name
     );
+    await req.user.save();
+    res.json(getPreferences(req.user));
+  } catch (error) {
+    res.status(500).json({ message: error.message });
+  }
+});
+
+// @route   PUT /api/auth/preferences/account
+// @desc    Update the account-level opening balance and currency
+// @access  Private
+router.put('/preferences/account', protect, async (req, res) => {
+  try {
+    const { openingBalanceMinor, currency } = req.body;
+
+    if (openingBalanceMinor !== undefined) {
+      const value = Number(openingBalanceMinor);
+      if (!Number.isInteger(value)) {
+        return res.status(400).json({ message: 'openingBalanceMinor must be an integer' });
+      }
+      req.user.openingBalanceMinor = value;
+    }
+
+    if (currency !== undefined) {
+      const code = String(currency).trim().toUpperCase();
+      if (!SUPPORTED_CURRENCIES.includes(code)) {
+        return res.status(400).json({
+          message: `currency must be one of ${SUPPORTED_CURRENCIES.join(', ')}`,
+        });
+      }
+      req.user.currency = code;
+    }
+
     await req.user.save();
     res.json(getPreferences(req.user));
   } catch (error) {
